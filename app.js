@@ -3,7 +3,8 @@ var express = require('express')
   , app     = express()
   , path    = require('path')
   , server  = require('http').createServer(app)
-  , io      = require('socket.io').listen(server);
+  , io      = require('socket.io').listen(server)
+  , redis   = require('redis-url').connect(process.env.REDISTOGO_URL || '');
 
 /******************************
  * config
@@ -38,8 +39,16 @@ io.configure(function () {
 
 io.sockets.on('connection', function (socket) {
   socket.emit('news', { hello: 'world' });
-  socket.on('some hoge', function (data) {
+  socket.on('signin', function (data) {
     console.log(data);
+    var username = data.username;
+    redis.set(username, 1);
+  });
+
+  socket.on('login', function (data) {
+    console.log(data);
+    var username = data.username;
+    redis.set(username, 1);
   });
 });
 
@@ -50,7 +59,8 @@ io.sockets.on('connection', function (socket) {
 app.get('/', function (req, res) {
 
   res.render('index.ejs', {
-      hello: 'world'
+      hello: 'world',
+      user: ''
 
   });
 });

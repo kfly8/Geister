@@ -1,26 +1,39 @@
+<!DOCTYPE html>
 <html>
     <head>
+        <link rel="stylesheet" href="/css/bootstrap.min.css" />
     </head>
     <body>
         <h1>Geister</h1>
-        <%= hello %>
 
-    <button id="hoge">click</button>
     <script src="/js/jquery.min.js"></script>
+    <script src="/js/uuid.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      var socket = io.connect(location.origin);
-        socket.on('news', function (data) {
-          console.log(data);
-          socket.emit('my other event', { my: 'data' });
-        });
-
-        $('#hoge').click(function() {
-            console.log('clicked');
-            socket.emit('some happen', { a: 'bc' });
-        });
+        function gen_username() {
+            return UUID.generate();
+        }
     </script>
+    <script>
+    var socket = io.connect(location.origin);
+    socket.on('connect', function() {
 
+        var username = sessionStorage.getItem('username');
+        if (username) {
+            socket.emit('login', { username: username });
+        }
+        else {
+            username = gen_username();
+            sessionStorage.setItem('username', username);
+            socket.emit('signin', { username: username });
+        }
+    });
+
+    socket.on('news', function (data) {
+        console.log(data);
+        socket.emit('my other event', { my: 'data' });
+    });
+    </script>
     </body>
 </html>
 

@@ -1,9 +1,12 @@
 <html>
     <head>
     </head>
-
     <body>
         <h1>Geister</h1>
+        <%= hello %>
+
+    <button id="hoge">click</button>
+    <script src="/js/jquery.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
       var socket = io.connect(location.origin);
@@ -11,8 +14,12 @@
           console.log(data);
           socket.emit('my other event', { my: 'data' });
         });
-    </script>
 
+        $('#hoge').click(function() {
+            console.log('clicked');
+            socket.emit('some happen', { a: 'bc' });
+        });
+    </script>
 
     </body>
 </html>

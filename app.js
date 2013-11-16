@@ -1,9 +1,34 @@
 
-var app    = require('express')()
-  , server = require('http').createServer(app)
-  , io     = require('socket.io').listen(server)
-  , port   = process.env.PORT || 5000;
+var express = require('express')
+  , app     = express()
+  , path    = require('path')
+  , server  = require('http').createServer(app)
+  , io      = require('socket.io').listen(server);
 
+/******************************
+ * config
+ ******************************/
+
+app.configure('development', function () {
+    app.use(express.logger('dev'));
+    app.use(express.errorHandler());
+});
+
+app.configure(function () {
+    app.set('port', process.env.PORT || 5000);
+    app.set('view engine', 'ejs');
+    app.use(express.favicon());
+    app.use(express.bodyParser());
+    app.use(express.methodOverride());
+    app.use('/favicon.ico', express.static(path.join(__dirname, 'public')));
+    app.use('/css', express.static(path.join(__dirname, 'public/css')));
+    app.use('/img', express.static(path.join(__dirname, 'public/img')));
+    app.use('/js', express.static(path.join(__dirname, 'public/js')));
+});
+ 
+/******************************
+ * socket.io
+ ******************************/
 
 // https://devcenter.heroku.com/articles/realtime-polyglot-app-node-ruby-mongodb-socketio#pushing-messages-to-the-browser-with-socket-io
 io.configure(function () {
@@ -11,15 +36,27 @@ io.configure(function () {
   io.set("polling duration", 10);
 });
 
-server.listen(port);
-
-app.get('/', function (req, res) {
-  res.sendfile(__dirname + '/index.html');
-});
-
 io.sockets.on('connection', function (socket) {
   socket.emit('news', { hello: 'world' });
-  socket.on('my other event', function (data) {
+  socket.on('some hoge', function (data) {
     console.log(data);
   });
 });
+
+
+/***************************
+ * router
+ ***************************/
+app.get('/', function (req, res) {
+
+  res.render('index.ejs', {
+      hello: 'world'
+
+  });
+});
+
+
+server.listen(app.get('port'), function () {
+    console.log("Express server listening on port " + app.get('port'));
+});
+

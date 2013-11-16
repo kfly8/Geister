@@ -1,7 +1,8 @@
 
 var app    = require('express')()
   , server = require('http').createServer(app)
-  , io     = require('socket.io').listen(server);
+  , io     = require('socket.io').listen(server)
+  , port   = process.env.PORT || 5000;
 
 
 // https://devcenter.heroku.com/articles/realtime-polyglot-app-node-ruby-mongodb-socketio#pushing-messages-to-the-browser-with-socket-io
@@ -10,7 +11,7 @@ io.configure(function () {
   io.set("polling duration", 10);
 });
 
-server.listen(5000);
+server.listen(port);
 
 app.get('/', function (req, res) {
   res.sendfile(__dirname + '/index.html');

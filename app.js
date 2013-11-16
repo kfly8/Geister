@@ -42,13 +42,15 @@ io.sockets.on('connection', function (socket) {
   socket.on('signin', function (data) {
     console.log(data);
     var username = data.username;
-    redis.set(username, 1);
+    redis.sadd('users', username);
   });
 
   socket.on('login', function (data) {
     console.log(data);
     var username = data.username;
-    redis.set(username, 1);
+    redis.sadd('login_users', username);
+    socket.emit('login_complete', { status: 'ok' });
+    socket.broadcast.emit('join', { username: username });
   });
 });
 
@@ -58,11 +60,7 @@ io.sockets.on('connection', function (socket) {
  ***************************/
 app.get('/', function (req, res) {
 
-  res.render('index.ejs', {
-      hello: 'world',
-      user: ''
-
-  });
+  res.render('index.ejs', {});
 });
 
 

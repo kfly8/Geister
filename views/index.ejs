@@ -5,14 +5,24 @@
     </head>
     <body>
         <h1>Geister</h1>
+        <div>
+            <ul id="user-list"></ul>
+        </div>
 
-    <script src="/js/jquery.min.js"></script>
     <script src="/js/uuid.js"></script>
+    <script src="/js/json2.js"></script>
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/underscore-min.js"></script>
+    <script src="/js/backbone.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        _.templateSettings = {
+            interpolate: /\{\{(.+?)\}\}/g
+        };
         function gen_username() {
             return UUID.generate();
         }
+
     </script>
     <script>
     var socket = io.connect(location.origin);
@@ -29,10 +39,21 @@
         }
     });
 
-    socket.on('news', function (data) {
+    socket.on('login_complete', function (data) {
+        console.log('login_complete');
         console.log(data);
-        socket.emit('my other event', { my: 'data' });
     });
+
+    socket.on('join', function (data) {
+        console.log('join');
+        console.log(data);
+        var tmpl = _.template($('#tmpl-user-list').text());
+        var html = tmpl(data);
+        $('#user-list').prepend(html);
+    });
+    </script>
+    <script type="text/template" id="tmpl-user-list">
+        <li>{{ username }}</li>
     </script>
     </body>
 </html>

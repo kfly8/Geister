@@ -6,7 +6,32 @@
     <body>
         <h1>Geister</h1>
         <div>
+            <div id="battle-header"></div>
+            <div id="battle-board">
+                <table>
+                <% for (var i = 0; i < 6; i++) { %>
+                    <tr>
+                    <% for (var j = 0; j < 6; j++) { %>
+                    <td style="width:50px;height:50px;background-color:<% if ((i+j)%2) { %>#afeeee<% } else { %>#e0ffff<% } %>">
+                      <a
+                          id="masu-i<%= i %>-j<%= j %>"
+                          href="#masu-i<%= i %>-j<%= j %>"
+                          data-i=<%= i %>
+                          data-j=<%= j %>
+                          style="width:100%;height:100%"
+                      >
+                      .
+                      </a>
+                    </td>
+                    <% } %>
+                    </tr>
+                <% } %>
+                </table>
+            </div>
+        </div>
+        <div id="user-list-wrapper">
             <ul id="user-list"></ul>
+            <ul id="user-battle-list"></div>
         </div>
 
     <script src="/js/uuid.js"></script>
@@ -19,8 +44,12 @@
         _.templateSettings = {
             interpolate: /\{\{(.+?)\}\}/g
         };
-        function gen_username() {
+        function mk_username() {
             return UUID.generate();
+        }
+
+        function get_username() {
+            return sessionStorage.getItem('username');
         }
 
     </script>
@@ -28,12 +57,11 @@
     var socket = io.connect(location.origin);
     socket.on('connect', function() {
 
-        var username = sessionStorage.getItem('username');
+        var username = get_username();
         if (username) {
             socket.emit('login', { username: username });
-        }
-        else {
-            username = gen_username();
+        } else {
+            username = mk_username();
             sessionStorage.setItem('username', username);
             socket.emit('signin', { username: username });
         }
@@ -44,17 +72,117 @@
         console.log(data);
     });
 
+    var CAN_BATTLE = 1;
+
     socket.on('join', function (data) {
         console.log('join');
         console.log(data);
         var tmpl = _.template($('#tmpl-user-list').text());
-        var html = tmpl(data);
-        $('#user-list').prepend(html);
+        $('#user-list').prepend(tmpl(data));
+
+        $('.start-battle').click(function(e) {
+            console.log('start-battle');
+            if (!CAN_BATTLE) return;
+            var tmp = $(e.currentTarget);
+            var op_username  = tmp.attr('data-username');
+            var username     = get_username();
+            socket.emit('start-battle', { username: username, op_username: op_username });
+        });
+
     });
+
+    socket.on('start-battle-approved', function (data) {
+        console.log('start-battle-approved');
+        console.log(data);
+        var username    = data.username;
+        var op_username = data.op_username;
+
+        if (op_username === get_username() || username === get_username()) {
+            CAN_BATTLE = 0;
+            $('#user-list-wrapper').hide();
+            console.log('対戦を開始');
+            var tmpl = _.template($('#tmpl-battle-info').text());
+            $('#battle-header').html(tmpl(data));
+
+            var my_koma_list    = _.shuffle([ 'R', 'R', 'R', 'R', 'B', 'B', 'B', 'B' ]);
+            var op_koma_list = ['W','W','W','W','W','W','W','W'];
+
+            var my_id_list = [];
+            var op_id_list = [];
+            if (username === get_username()) { // 挑んだ場合
+                for (j = 1; j < 5; j++) {
+                    my_id_list.push('masu-i4-j'+j);
+                    my_id_list.push('masu-i5-j'+j);
+
+                    op_id_list.push('masu-i0-j'+j);
+                    op_id_list.push('masu-i1-j'+j);
+                }
+            }
+            else {
+                for (j = 1; j < 5; j++) {
+                    my_id_list.push('masu-i0-j'+j);
+                    my_id_list.push('masu-i1-j'+j);
+
+                    op_id_list.push('masu-i4-j'+j);
+                    op_id_list.push('masu-i5-j'+j);
+                }
+            }
+
+            var my_masu_data = _.object(my_id_list, my_koma_list);
+            var op_masu_data = _.object(op_id_list, op_koma_list);
+
+            var id_list = _.clone(my_id_list).concat(op_id_list);
+
+            var style_data = {
+                W: 'font-size:20px;color:#696969;',
+                R: 'font-size:20px;color:#ff4500;',
+                B: 'font-size:20px;color:#0000cd;'
+            };
+
+            for (var idx = 0, l = id_list.length; idx < l; idx++) {
+
+                var id = id_list[idx];
+                var $masu = $('#'+id);
+
+                var koma = my_masu_data[id] || op_masu_data[id];
+                $masu.html('<span style="' + style_data[koma] + '">' + koma + '</span>');
+
+                $masu.click(function() {
+                    console.log('masu click');
+
+                    if (confirm('move?')) {
+
+                        socket.emit('move', {
+                            username: get_username(),
+                            color: $masu.text(),
+                            i: $masu.attr('data-i'),
+                            j: $masu.attr('data-j')
+                        });
+                    } else {
+                        console.log('not move');
+                    }
+                });
+
+            }
+        } else {
+            console.log('その他');
+            var tmpl = _.template($('#tmpl-battle-info').text());
+            $('#user-battle-list').prepend(tmpl(data));
+        }
+    });
+
+
     </script>
     <script type="text/template" id="tmpl-user-list">
-        <li>{{ username }}</li>
+        <li>
+          join:{{ username }}<br />
+          <button class="start-battle" data-username="{{ username }}">対戦する</button>
+        </li>
     </script>
+    <script type="text/template" id="tmpl-battle-info">
+       対戦開始:{{ username }} vs {{ op_username }}
+    </script>
+
     </body>
 </html>
 

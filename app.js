@@ -52,6 +52,24 @@ io.sockets.on('connection', function (socket) {
     socket.emit('login_complete', { status: 'ok' });
     socket.broadcast.emit('join', { username: username });
   });
+
+  socket.on('start-battle', function (data) {
+    console.log('start-battle');
+    var username    = data.username;
+    var op_username = data.op_username;
+    redis.sadd('matchs', username + ':' + op_username);
+    io.sockets.emit('start-battle-approved', { username: username, op_username: op_username });
+  });
+
+  socket.on('move', function (data) {
+    console.log('start-battle');
+    var username    = data.username;
+    var op_username = data.op_username;
+    redis.sadd('matchs', username + ':' + op_username);
+    io.sockets.emit('start-battle-approved', { username: username, op_username: op_username });
+  });
+
+
 });
 
 

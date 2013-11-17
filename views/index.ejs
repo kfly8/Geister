@@ -37,6 +37,7 @@
     <script src="/js/uuid.js"></script>
     <script src="/js/json2.js"></script>
     <script src="/js/jquery.min.js"></script>
+    <script src="/js/jquery-ui.js"></script>
     <script src="/js/underscore-min.js"></script>
     <script src="/js/backbone.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -147,23 +148,36 @@
                 var koma = my_masu_data[id] || op_masu_data[id];
                 $masu.html('<span style="' + style_data[koma] + '">' + koma + '</span>');
 
-                $masu.click(function() {
-                    console.log('masu click');
+                if (my_masu_data[id]) {
 
-                    if (confirm('move?')) {
+                    $masu.draggable({
+                        revert: function() {
+                            if (confirm('move?')) {
 
-                        socket.emit('move', {
-                            username: get_username(),
-                            color: $masu.text(),
-                            i: $masu.attr('data-i'),
-                            j: $masu.attr('data-j')
-                        });
-                    } else {
-                        console.log('not move');
-                    }
-                });
-
+                                socket.emit('move', {
+                                    username: get_username(),
+                                    color: $masu.text(),
+                                    i: $masu.attr('data-i'),
+                                    j: $masu.attr('data-j')
+                                });
+                                return false;
+                            } else {
+                                console.log('not move');
+                                return true;
+                            }
+                        }
+                    });
+                }
             }
+
+            $('#battle-board td').droppable({
+                drop: function(e) {
+
+                    console.log('dropped');
+                    console.log($(e.currentTarget));
+
+                }
+            });
         } else {
             console.log('その他');
             var tmpl = _.template($('#tmpl-battle-info').text());

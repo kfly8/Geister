@@ -20,7 +20,6 @@
                           data-j=<%= j %>
                           style="width:100%;height:100%"
                       >
-                      .
                       </a>
                     </td>
                     <% } %>
@@ -151,15 +150,29 @@
                 if (my_masu_data[id]) {
 
                     $masu.draggable({
-                        revert: function() {
-                            if (confirm('move?')) {
+                        revert: function($dropped) {
 
-                                socket.emit('move', {
+                            if (confirm('move?')) {
+                                console.log('move');
+
+                                var $a = $('a:first-child', $dropped);
+
+                                var data = {
                                     username: get_username(),
-                                    color: $masu.text(),
-                                    i: $masu.attr('data-i'),
-                                    j: $masu.attr('data-j')
-                                });
+                                    color: this.text(),
+                                    from: {
+                                        i: $masu.attr('data-i'),
+                                        j: $masu.attr('data-j')
+                                    },
+                                    to: {
+                                        i: $a.attr('data-i'),
+                                        j: $a.attr('data-j'),
+                                    }
+                                };
+
+                                console.log(data);
+                                socket.emit('move', data);
+
                                 return false;
                             } else {
                                 console.log('not move');
@@ -170,12 +183,11 @@
                 }
             }
 
+            // XXX どこにドロップしたかの情報を獲得するために必要
             $('#battle-board td').droppable({
-                drop: function(e) {
-
+                tolerance: 'fit',
+                drop: function(e, ui) {
                     console.log('dropped');
-                    console.log($(e.currentTarget));
-
                 }
             });
         } else {

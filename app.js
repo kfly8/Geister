@@ -63,15 +63,15 @@ io.sockets.on('connection', function (socket) {
 
   socket.on('move', function (data) {
     console.log('move');
-    var actor       = data.actor;
-    var from        = data.from;
-    var to          = data.to;
+    var actor = data.actor;
+    var koma  = data.koma;
+    var masu  = data.masu;
     // 対戦相手だけに送る
     // 型のチェック..
     socket.broadcast.emit('move', {
         actor: actor,
-        from: from,
-        to: to
+        koma: koma,
+        masu: masu 
     });
   });
 });

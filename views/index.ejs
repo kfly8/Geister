@@ -12,15 +12,12 @@
                 <% for (var i = 0; i < 6; i++) { %>
                     <tr>
                     <% for (var j = 0; j < 6; j++) { %>
-                    <td style="width:100px;height:100px;background-color:<% if ((i+j)%2) { %>#afeeee<% } else { %>#e0ffff<% } %>">
-                      <a
-                          id="masu-i<%= i %>-j<%= j %>"
-                          href="#masu-i<%= i %>-j<%= j %>"
-                          data-i=<%= i %>
-                          data-j=<%= j %>
-                          style="width:100%;height:100%"
-                      >
-                      </a>
+                    <td
+                        style="width:100px;height:100px;background-color:<% if ((i+j)%2) { %>#afeeee<% } else { %>#e0ffff<% } %>"
+                        id   = 'masu-i<%= i %>-j<%= j %>'
+                        data-i=<%= i %>
+                        data-j=<%= j %>
+                    >
                     </td>
                     <% } %>
                     </tr>
@@ -52,6 +49,41 @@
             return sessionStorage.getItem('username');
         }
 
+        function set_fighting(data) {
+            sessionStorage.setItem('match', { username: data.username, op_username: data.op_username });
+        }
+
+        function get_fighting(data) {
+            return sessionStorage.getItem('match');
+        }
+
+        function is_fighting(match_data) {
+            var match_data = match_data || get_fighting();
+            if (!match_data) return
+            return match_data.username === get_username() || match_data.op_username === get_username() ? 1 : 0;
+        }
+
+        function draggable_revert($masu) {
+
+            if (confirm('move?')) {
+                console.log('move');
+
+                var data = {
+                    actor: get_username(),
+                    koma: this.attr('id'),
+                    masu: $masu.attr('id')
+                };
+
+                console.log(data);
+                //socket.emit('move', data);
+
+                return false;
+            } else {
+                console.log('not move');
+                return true;
+            }
+        }
+
     </script>
     <script>
     var socket = io.connect(location.origin);
@@ -72,8 +104,6 @@
         console.log(data);
     });
 
-    var CAN_BATTLE = 1;
-
     socket.on('join', function (data) {
         console.log('join');
         console.log(data);
@@ -82,10 +112,11 @@
 
         $('.start-battle').click(function(e) {
             console.log('start-battle');
-            if (!CAN_BATTLE) return;
+            if (is_fighting()) return;
             var tmp = $(e.currentTarget);
             var op_username  = tmp.attr('data-username');
             var username     = get_username();
+
             socket.emit('start-battle', { username: username, op_username: op_username });
         });
 
@@ -97,14 +128,15 @@
         var username    = data.username;
         var op_username = data.op_username;
 
-        if (op_username === get_username() || username === get_username()) {
-            CAN_BATTLE = 0;
+        if (is_fighting(data)) {
+
+            set_fighting(data);
             $('#user-list-wrapper').hide();
             console.log('対戦を開始');
             var tmpl = _.template($('#tmpl-battle-info').text());
             $('#battle-header').html(tmpl(data));
 
-            var my_koma_list    = _.shuffle([ 'R', 'R', 'R', 'R', 'B', 'B', 'B', 'B' ]);
+            var my_koma_list = _.shuffle([ 'R', 'R', 'R', 'R', 'B', 'B', 'B', 'B' ]);
             var op_koma_list = ['W','W','W','W','W','W','W','W'];
 
             var my_id_list = [];
@@ -133,62 +165,27 @@
 
             var id_list = _.clone(my_id_list).concat(op_id_list);
 
-            var style_data = {
-                W: 'font-size:20px;color:#696969;',
-                R: 'font-size:20px;color:#ff4500;',
-                B: 'font-size:20px;color:#0000cd;'
-            };
-
+            var tmpl_koma = _.template($('#tmpl-koma').text());
             for (var idx = 0, l = id_list.length; idx < l; idx++) {
 
-                var id = id_list[idx];
-                var $masu = $('#'+id);
+                var masu_id   = id_list[idx];
+                var $masu     = $('#'+masu_id);
+                var koma_text = my_masu_data[masu_id] || op_masu_data[masu_id];
+                var koma_id   = masu_id.replace(/masu/, 'koma');
+                var $koma     = $(tmpl_koma({ id: koma_id, text: koma_text }));
+                $masu.html($koma);
 
-                var koma = my_masu_data[id] || op_masu_data[id];
-                $masu.html('<span style="' + style_data[koma] + '">' + koma + '</span>');
+                if (my_masu_data[masu_id]) { // 自分のコマだったらドラッグ可能
 
-                if (my_masu_data[id]) {
-
-                    $masu.draggable({
-                        revert: function($dropped) {
-
-                            if (confirm('move?')) {
-                                console.log('move');
-
-                                var $a = $('a:first-child', $dropped);
-
-                                var data = {
-                                    username: get_username(),
-                                    color: this.text(),
-                                    from: {
-                                        i: $masu.attr('data-i'),
-                                        j: $masu.attr('data-j')
-                                    },
-                                    to: {
-                                        i: $a.attr('data-i'),
-                                        j: $a.attr('data-j'),
-                                    }
-                                };
-
-                                console.log(data);
-                                socket.emit('move', data);
-
-                                return false;
-                            } else {
-                                console.log('not move');
-                                return true;
-                            }
-                        }
+                    $koma.draggable({
+                        cursor: '-webkit-grab',
+                        revert: draggable_revert
                     });
                 }
             }
 
-            // XXX どこにドロップしたかの情報を獲得するために必要
             $('#battle-board td').droppable({
-                tolerance: 'fit',
-                drop: function(e, ui) {
-                    console.log('dropped');
-                }
+                tolerance: 'fit'
             });
         } else {
             console.log('その他');
@@ -197,6 +194,17 @@
         }
     });
 
+    socket.on('move', function (data) {
+
+        console.log('moved');
+        console.log(data);
+
+        if (!is_fighting(data)) return;
+
+        var $a = $('#masu-i' + data.from.i + '-j' + data.from.j);
+        console.log($a);
+
+    });
 
     </script>
     <script type="text/template" id="tmpl-user-list">
@@ -207,6 +215,14 @@
     </script>
     <script type="text/template" id="tmpl-battle-info">
        対戦開始:{{ username }} vs {{ op_username }}
+    </script>
+
+    <script type="text/template" id="tmpl-koma">
+        <span
+            id   = "{{ id }}"
+            style="cursor:-webkit-grab;font-size:20px;color:{{ text === 'W' ? '#696969' : text === 'R' ? '#ff4500' : text === 'B' ? '#0000cd' : '' }};">
+          {{ text }}
+        </span>
     </script>
 
     </body>

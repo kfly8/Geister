@@ -62,14 +62,18 @@ io.sockets.on('connection', function (socket) {
   });
 
   socket.on('move', function (data) {
-    console.log('start-battle');
-    var username    = data.username;
-    var op_username = data.op_username;
-    redis.sadd('matchs', username + ':' + op_username);
-    io.sockets.emit('start-battle-approved', { username: username, op_username: op_username });
+    console.log('move');
+    var actor       = data.actor;
+    var from        = data.from;
+    var to          = data.to;
+    // 対戦相手だけに送る
+    // 型のチェック..
+    socket.broadcast.emit('move', {
+        actor: actor,
+        from: from,
+        to: to
+    });
   });
-
-
 });
 
 

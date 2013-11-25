@@ -68,6 +68,13 @@ io.sockets.on('connection', function (socket) {
     console.log(data);
     socket.broadcast.emit('move', data);
   });
+
+  socket.on('open_color', function (data) {
+    console.log('open_color');
+    console.log(data);
+    socket.broadcast.emit('open_color', data);
+  });
+
 });
 
 

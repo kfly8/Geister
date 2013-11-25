@@ -24,6 +24,8 @@
                 <% } %>
                 </table>
             </div>
+            <div id="battle-koma-user">自分が取ったコマ:</div>
+            <div id="battle-koma-opposite">相手が取ったコマ:</div>
         </div>
         <div id="user-list-wrapper">
             <ul id="user-list"></ul>
@@ -82,7 +84,15 @@
                     masu: $masu.attr('id')
                 };
 
-                console.log(data);
+                $masu.children().each(function(i,v) {
+                    var $old_koma = $(v);
+                    console.log($old_koma);
+                    $('#battle-koma-user').append($old_koma);
+                    data.old_koma = $old_koma.attr('id');
+                });
+
+                $masu.html(this);
+                this.css({ top: 0, left:0 });
                 socket.emit('move', data);
 
                 return false;
@@ -212,11 +222,32 @@
 
         var $koma = $('#' + data.koma);
         var $masu = $('#' + data.masu);
+        if (data.old_koma) {
+            var $old_koma = $('#'+data.old_koma);
+            $('#battle-koma-opposite').append($old_koma);
 
-        console.log($koma);
-        console.log($masu);
+            // どんな色のコマか相手に知らせる
+            socket.emit('open_color', {
+                username: data.username,
+                op_username: data.op_username,
+                koma: $old_koma.attr('id'),
+                color: $old_koma.text()
+            });
+        }
+
         $masu.html($koma);
     });
+
+    socket.on('open_color', function (data) {
+
+        console.log('open_color');
+
+        if (!is_fighting(data)) return;
+
+        var $koma = $('#' + data.koma);
+        $koma.text(data.color);
+    });
+
 
     </script>
     <script type="text/template" id="tmpl-user-list">

@@ -63,16 +63,10 @@ io.sockets.on('connection', function (socket) {
 
   socket.on('move', function (data) {
     console.log('move');
-    var actor = data.actor;
-    var koma  = data.koma;
-    var masu  = data.masu;
-    // 対戦相手だけに送る
-    // 型のチェック..
-    socket.broadcast.emit('move', {
-        actor: actor,
-        koma: koma,
-        masu: masu 
-    });
+    // TODO 対戦相手だけに送る
+    // TODO 型のチェック..
+    console.log(data);
+    socket.broadcast.emit('move', data);
   });
 });
 

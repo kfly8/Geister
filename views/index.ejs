@@ -50,16 +50,20 @@
         }
 
         function set_fighting(data) {
-            sessionStorage.setItem('match', { username: data.username, op_username: data.op_username });
+
+            sessionStorage.setItem('match.username',    data.username);
+            sessionStorage.setItem('match.op_username', data.op_username);
         }
 
-        function get_fighting(data) {
-            return sessionStorage.getItem('match');
+        function get_fighting() {
+            var username    = sessionStorage.getItem('match.username');
+            var op_username = sessionStorage.getItem('match.op_username');
+            return { username: username, op_username: op_username };
         }
 
         function is_fighting(match_data) {
             var match_data = match_data || get_fighting();
-            if (!match_data) return
+            if (!match_data) return;
             return match_data.username === get_username() || match_data.op_username === get_username() ? 1 : 0;
         }
 
@@ -68,7 +72,11 @@
             if (confirm('move?')) {
                 console.log('move');
 
+                var match = get_fighting();
+                console.log(match);
                 var data = {
+                    username: match.username,
+                    op_username: match.op_username,
                     actor: get_username(),
                     koma: this.attr('id'),
                     masu: $masu.attr('id')
@@ -112,7 +120,8 @@
 
         $('.start-battle').click(function(e) {
             console.log('start-battle');
-            if (is_fighting()) return;
+            // XXX 対戦中だったら、対戦中の表示をしたいな
+            //if (is_fighting()) return;
             var tmp = $(e.currentTarget);
             var op_username  = tmp.attr('data-username');
             var username     = get_username();
@@ -130,6 +139,7 @@
 
         if (is_fighting(data)) {
 
+            console.log(data);
             set_fighting(data);
             $('#user-list-wrapper').hide();
             console.log('対戦を開始');
@@ -197,13 +207,15 @@
     socket.on('move', function (data) {
 
         console.log('moved');
-        console.log(data);
 
         if (!is_fighting(data)) return;
 
-        var $a = $('#masu-i' + data.from.i + '-j' + data.from.j);
-        console.log($a);
+        var $koma = $('#' + data.koma);
+        var $masu = $('#' + data.masu);
 
+        console.log($koma);
+        console.log($masu);
+        $masu.html($koma);
     });
 
     </script>
